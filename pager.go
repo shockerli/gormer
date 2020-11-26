@@ -1,59 +1,88 @@
-package gscope
+package gormer
 
 import "github.com/jinzhu/gorm"
 
-// 统一的分页参数
+// PageParam uniform paging parameters
 type PageParam struct {
-	CurrPage   int `json:"curr_page" binding:"number"`
-	PageSize   int `json:"page_size" binding:"number"`
-	IgnorePage int `json:"ignore_page,omitempty"` // 不分页
+	CurrPage   int `json:"curr_page" binding:"number"` // (optional) current page number, default 1
+	PageSize   int `json:"page_size" binding:"number"` // (optional) number of per page, default 10
+	IgnorePage int `json:"ignore_page,omitempty"`      // (optional) no paging and no total count, while not 0
 }
 
-func InitParam(param *PageParam) *PageParam {
-	if param == nil {
-		param = &PageParam{
+// Init init param
+func (p *PageParam) Init() {
+	if p == nil {
+		p = &PageParam{
 			PageSize: 10,
 			CurrPage: 1,
 		}
 	}
 
-	if param.CurrPage <= 0 {
-		param.CurrPage = 1
+	if p.CurrPage <= 0 {
+		p.CurrPage = 1
 	}
 
-	if param.PageSize <= 0 {
-		param.PageSize = 10
+	if p.PageSize <= 0 {
+		p.PageSize = 10
 	}
-
-	return param
 }
 
-// 统一的分页响应结构
+// Page pager scope
+func (p *PageParam) Page() func(db *gorm.DB) *gorm.DB {
+	// ignore page and count
+	if p.IgnorePage != 0 {
+		return func(db *gorm.DB) *gorm.DB {
+			return db
+		}
+	}
+
+	p.Init()
+	offset := (p.CurrPage - 1) * p.PageSize
+
+	return func(db *gorm.DB) *gorm.DB {
+		if offset > 0 {
+			db = db.Offset(offset)
+		}
+		if p.PageSize > 0 {
+			db = db.Limit(p.PageSize)
+		}
+		return db
+	}
+}
+
+// PageResult unified paging response structure
 type PageResult struct {
 	PageParam
 	TotalCount int `json:"total_count"`
 	CurrCount  int `json:"curr_count"`
 }
 
-// ScopePage 处理分页
-func ScopePage(param *PageParam) func(db *gorm.DB) *gorm.DB {
-	// 忽略分页&总数
-	if param.IgnorePage != 0 {
-		return func(db *gorm.DB) *gorm.DB {
-			return db
-		}
+// Count count result
+func (p *PageResult) Count(db *gorm.DB) error {
+	if p.IgnorePage != 0 {
+		return nil
 	}
 
-	param = InitParam(param)
-	offset := (param.CurrPage - 1) * param.PageSize
+	return db.Count(&p.TotalCount).Error
+}
 
-	return func(db *gorm.DB) *gorm.DB {
-		if offset > 0 {
-			db = db.Offset(offset)
-		}
-		if param.PageSize > 0 {
-			db = db.Limit(param.PageSize)
-		}
-		return db
+// Scan scan result and count
+func (p *PageResult) Scan(db *gorm.DB, dest interface{}) (err error) {
+	db = db.Scan(dest)
+	err = db.Error
+	if err == gorm.ErrRecordNotFound {
+		err = nil
 	}
+	if err != nil {
+		return
+	}
+
+	p.CurrCount = int(db.RowsAffected)
+	if p.IgnorePage != 0 {
+		p.TotalCount = p.CurrCount
+	} else {
+		return p.Count(db)
+	}
+
+	return
 }
