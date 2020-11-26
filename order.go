@@ -1,4 +1,4 @@
-package gscope
+package gormer
 
 import (
 	"strings"
@@ -8,8 +8,8 @@ import (
 
 // OrderParam
 type OrderParam struct {
-	OrderBy   string `json:"order_by"` // 可以是具体字段名，也可以是逗号分隔的多个排序
-	OrderType string `json:"order_type"`
+	OrderBy   string `json:"order_by"`   // (optional) column name, or SQL ORDER statement
+	OrderType string `json:"order_type"` // (optional) ASC/DESC
 }
 
 // OrderBy scope: order by
