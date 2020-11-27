@@ -7,7 +7,7 @@ import (
 )
 
 // ChunkByIDMaxMin process data in chunks, scope by id
-func ChunkByIDMaxMin(size int, db *gorm.DB, dest interface{}, cb func(v interface{}), l Logger) {
+func ChunkByIDMaxMin(size int, db *gorm.DB, dest interface{}, callback func(), l Logger) {
 	if l == nil {
 		l = new(DefaultLogger)
 	}
@@ -67,7 +67,7 @@ func ChunkByIDMaxMin(size int, db *gorm.DB, dest interface{}, cb func(v interfac
 		}
 
 		// custom process by callback
-		cb(dest)
+		callback()
 
 	}
 
