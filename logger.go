@@ -9,17 +9,32 @@ type Logger interface {
 	Error(v ...interface{})
 }
 
-// default logger
-type defaultLogger struct{}
+// DefaultLogger default logger, console output
+type DefaultLogger struct{}
 
-func (*defaultLogger) Debug(v ...interface{}) {
+// Debug log a debug message
+func (*DefaultLogger) Debug(v ...interface{}) {
 	log.Println(v)
 }
 
-func (*defaultLogger) Info(v ...interface{}) {
+// Info log a message
+func (*DefaultLogger) Info(v ...interface{}) {
 	log.Println(v)
 }
 
-func (*defaultLogger) Error(v ...interface{}) {
+// Error log a error message
+func (*DefaultLogger) Error(v ...interface{}) {
 	log.Println(v)
 }
+
+// NoLogger no log to output
+type NoLogger struct{}
+
+// Debug log a debug message
+func (*NoLogger) Debug(v ...interface{}) {}
+
+// Info log a message
+func (*NoLogger) Info(v ...interface{}) {}
+
+// Error log a error message
+func (*NoLogger) Error(v ...interface{}) {}

@@ -6,13 +6,13 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// OrderParam
+// OrderParam params of order by statement
 type OrderParam struct {
 	OrderBy   string `json:"order_by"`   // (optional) column name, or SQL ORDER statement
 	OrderType string `json:"order_type"` // (optional) ASC/DESC
 }
 
-// OrderBy scope: order by
+// Order scope: order by
 func (p *OrderParam) Order() func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if p != nil && p.OrderBy != "" {

@@ -6,10 +6,10 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// ChunkByIDMaxMin
-func ChunkByIdMaxMin(size int, db *gorm.DB, dest interface{}, cb func(v interface{}), l Logger) {
+// ChunkByIDMaxMin process data in chunks, scope by id
+func ChunkByIDMaxMin(size int, db *gorm.DB, dest interface{}, cb func(v interface{}), l Logger) {
 	if l == nil {
-		l = new(defaultLogger)
+		l = new(DefaultLogger)
 	}
 
 	// query the maximum and minimum primary key id that satisfy the criteria
@@ -34,8 +34,10 @@ func ChunkByIdMaxMin(size int, db *gorm.DB, dest interface{}, cb func(v interfac
 
 	// store the max id of last loop
 	var lastMaxID = stat.MinID
+	var loop = 0
 
 	for {
+		loop++
 
 		if lastMaxID > stat.MaxID {
 			l.Info("data processing is completed...")
@@ -53,7 +55,7 @@ func ChunkByIdMaxMin(size int, db *gorm.DB, dest interface{}, cb func(v interfac
 			Where("id < ?", lt).
 			Scan(dest)
 
-		l.Info(fmt.Sprintf("query result %d <= id < %d, count: %d, err: %v", lastMaxID, lt, res.RowsAffected, res.Error))
+		l.Info(fmt.Sprintf("loop: %d, query result %d <= id < %d, count: %d, err: %v", loop, lastMaxID, lt, res.RowsAffected, res.Error))
 
 		lastMaxID += size
 
@@ -68,4 +70,5 @@ func ChunkByIdMaxMin(size int, db *gorm.DB, dest interface{}, cb func(v interfac
 		cb(dest)
 
 	}
+
 }
