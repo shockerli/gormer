@@ -2,8 +2,12 @@ package gormer
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/blastrain/vitess-sqlparser/sqlparser"
 )
 
 // Schema table schema info
@@ -42,9 +46,50 @@ type Field struct {
 	Comment       string      `json:"comment"`
 }
 
+// Parse parse schema info from raw DDL
+func (s *Schema) Parse() error {
+	stmt, err := sqlparser.Parse(s.RawDDL)
+	if err != nil {
+		return err
+	}
+
+	ddl, ok := stmt.(*sqlparser.CreateTable)
+	if !ok {
+		return errors.New("DDL is not a correct CREATE SQL")
+	}
+
+	s.TableName = ddl.NewName.Name.String()
+
+	return nil
+}
+
 // Markdown return markdown format content
-func (Schema) Markdown() string {
-	return ""
+func (s Schema) Markdown() string {
+	var ms = `
+| Field | Type | Not Null | Default | Comment |
+| --- | --- | :---: | --- | --- |
+`
+	for _, f := range s.Fields {
+		var notNull = "❎"
+		if f.NotNull {
+			notNull = "✅"
+		}
+		var defaultVal = "-"
+		if f.Default != nil {
+			defaultVal = fmt.Sprintf("%v", f.Default)
+		}
+
+		ms += fmt.Sprintf(
+			"| %s | %s | %s | %s | %s |",
+			f.Name,
+			f.Type,
+			notNull,
+			defaultVal,
+			f.Comment,
+		)
+	}
+
+	return ms
 }
 
 // JSON return json format content
@@ -55,7 +100,7 @@ func (s Schema) JSON() string {
 
 // NewDDL new ddl for table, remove auto_increment
 func (s Schema) NewDDL() string {
-	// 去除自增项
+	// remove AUTO_INCREMENT
 	reg, err := regexp.Compile(`(?i)\sAUTO_INCREMENT=\d*\s`)
 	if err != nil {
 		return s.RawDDL
