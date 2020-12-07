@@ -4,13 +4,15 @@ import "log"
 
 // Logger log message
 type Logger interface {
-	Debug(v ...interface{})
-	Info(v ...interface{})
-	Error(v ...interface{})
+	Debug(...interface{})
+	Info(...interface{})
+	Error(...interface{})
 }
 
 // DefaultLogger default logger, console output
 type DefaultLogger struct{}
+
+var _ Logger = &DefaultLogger{}
 
 // Debug log a debug message
 func (*DefaultLogger) Debug(v ...interface{}) {
@@ -30,11 +32,13 @@ func (*DefaultLogger) Error(v ...interface{}) {
 // NoLogger no log to output
 type NoLogger struct{}
 
+var _ Logger = &NoLogger{}
+
 // Debug log a debug message
-func (*NoLogger) Debug(v ...interface{}) {}
+func (*NoLogger) Debug(...interface{}) {}
 
 // Info log a message
-func (*NoLogger) Info(v ...interface{}) {}
+func (*NoLogger) Info(...interface{}) {}
 
 // Error log a error message
-func (*NoLogger) Error(v ...interface{}) {}
+func (*NoLogger) Error(...interface{}) {}
