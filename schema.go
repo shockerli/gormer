@@ -141,15 +141,16 @@ func (s *Schema) Parse() error {
 // Markdown return markdown format content
 func (s Schema) Markdown() string {
 	var ms = `
-- Name: %s
-- Comment: %s
-- Charset: %s
+- Table:    %s
+- Comment:  %s
+- Charset:  %s
+- Engine:   %s
 
 | Column | Type | Not Null | Default | Comment |
 | --- | --- | :---: | --- | --- |
 `
 
-	ms = fmt.Sprintf(ms, s.TableName, s.Comment, s.DefaultCharset)
+	ms = fmt.Sprintf(ms, s.TableName, s.Comment, s.DefaultCharset, s.Engine)
 
 	for _, f := range s.Columns {
 		var notNull = "❎"
