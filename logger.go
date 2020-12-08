@@ -16,17 +16,17 @@ var _ Logger = &DefaultLogger{}
 
 // Debug log a debug message
 func (*DefaultLogger) Debug(v ...interface{}) {
-	log.Println(v)
+	log.Println(v...)
 }
 
 // Info log a message
 func (*DefaultLogger) Info(v ...interface{}) {
-	log.Println(v)
+	log.Println(v...)
 }
 
 // Error log a error message
 func (*DefaultLogger) Error(v ...interface{}) {
-	log.Println(v)
+	log.Println(v...)
 }
 
 // NoLogger no log to output
