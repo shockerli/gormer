@@ -184,14 +184,14 @@ func (s Schema) JSON() string {
 // NewDDL new ddl for table, remove auto_increment
 func (s Schema) NewDDL() string {
 	// remove AUTO_INCREMENT
-	reg, err := regexp.Compile(`(?i)\sAUTO_INCREMENT=\d*\s`)
+	reg, err := regexp.Compile(`(?i)\s*AUTO_INCREMENT=\d*\s*`)
 	if err != nil {
 		return s.RawDDL
 	}
 
 	res := reg.FindStringSubmatch(s.RawDDL)
 	if len(res) >= 1 {
-		return strings.Replace(s.RawDDL, res[0], " ", 1)
+		return strings.TrimSpace(strings.Replace(s.RawDDL, res[0], " ", 1))
 	}
 
 	return s.RawDDL
