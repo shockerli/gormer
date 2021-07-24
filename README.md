@@ -1,6 +1,6 @@
 # gormer
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/shockerli/gormer)](https://pkg.go.dev/github.com/shockerli/gormer)
-> Useful scopes and tools for [GORM v1](https://github.com/jinzhu/gorm)
+> Useful scopes and tools for [GORM V1](https://github.com/jinzhu/gorm)
 
 ## Examples
 
@@ -14,7 +14,7 @@ if err != nil {
 }
 
 var data []YourObject
-db = db.Table("your_object_table_name").Where("bz_id = ?", 999)
+db = db.Table("your_object_table_name").Select("id, name").Where("bz_id = ?", 999)
 
 gormer.ChunkByIDMaxMin(50, db, &data, func() {
     for _, item := range data {
@@ -37,8 +37,8 @@ type QueryUserListParams struct {
 }
 
 type QueryUserListResult struct {
-	gormer.PageResult
-	List []User
+    gormer.PageResult
+    List []User
 }
 
 var params = QueryUserListParams{}
