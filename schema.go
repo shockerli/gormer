@@ -101,7 +101,7 @@ func (s *Schema) Parse() error {
 			Type: v.Type,
 		}
 		unsigned := regexpUnsigned.FindStringSubmatch(col.Type)
-		if len(unsigned) >= 2 {
+		if len(unsigned) >= 1 {
 			col.Unsigned = true
 			col.Type = strings.Replace(col.Type, unsigned[0], "", 1)
 		}
