@@ -198,8 +198,10 @@ func parseImports(imps []*ast.ImportSpec) map[string]string {
 		var name string
 		if imp.Name != nil {
 			name = imp.Name.Name
+			// build path with alias
 			path = name + " " + path
 		} else {
+			// parse name from path
 			if strings.Contains(path, "/") {
 				name = strings.TrimRight(path[strings.LastIndex(path, "/")+1:], `"`)
 			} else {

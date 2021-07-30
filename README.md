@@ -2,9 +2,8 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/shockerli/gormer)](https://pkg.go.dev/github.com/shockerli/gormer)
 > Useful scopes and tools for [GORM V1](https://github.com/jinzhu/gorm)
 
-## Examples
 
-### Chunk
+## Chunk
 ```go
 db, err := gorm.Open(
     "mysql",
@@ -24,7 +23,7 @@ gormer.ChunkByIDMaxMin(50, db, &data, func() {
 }, nil)
 ```
 
-### Pager
+## Pager
 ```go
 type User struct {
     ID   int    `json:"id"`
@@ -50,7 +49,7 @@ db = db.Table("your_object_table_name").Where("bz_id = ?", 999)
 data.Scan(db, &data.List)
 ```
 
-### Order
+## Order
 ```go
 type QueryUserListParams struct {
     gormer.OrderParam
@@ -61,7 +60,7 @@ var params = QueryUserListParams{}
 db = db.Table("your_object_table_name").Scopes(params.Order())
 ```
 
-### sql-builder-gen
+## sql-builder-gen
 - Install
 
 ```shell
