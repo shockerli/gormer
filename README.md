@@ -88,7 +88,7 @@ type DispatchTypeX struct {
 }
 ```
 
-### Generate code
+- Generate code
 
 > execute command: `go generate app/field/fields.go`
 >
@@ -140,7 +140,7 @@ func (i DispatchTypeX) Eq(v ...enum.DispatchType) func(db *gorm.DB) *gorm.DB {
 }
 ```
 
-### Use code
+- Use code
 > use `Scope()` build where condition
 
 ```go
