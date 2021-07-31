@@ -147,8 +147,9 @@ func (i {{.Name}}) Date() string {
 }
 
 // DateInt return date with int
-func (i {{.Name}}) DateInt() string {
-	return time.Unix(i.{{.Field}}, 0).Format("20060102")
+func (i {{.Name}}) DateInt() int {
+	v, _ := strconv.Atoi(time.Unix(i.CT, 0).Format("20060102"))
+	return v
 }
 
 // Time return time.Time

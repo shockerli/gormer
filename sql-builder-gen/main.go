@@ -205,8 +205,8 @@ func clearData(fs []Field) (imps []string, nfs []Field) {
 			}
 
 			switch true {
-			case f.Type == "int64" && ext == TIME:
-				imps = append(imps, `"time"`) // need std time package
+			case f.Type == "int64" && ext == TIME: // only support int64
+				imps = append(imps, `"time"`, `"strconv"`) // need std package
 			default:
 				continue
 			}
@@ -215,6 +215,7 @@ func clearData(fs []Field) (imps []string, nfs []Field) {
 
 		nfs = append(nfs, nf)
 	}
+	imps = uniqueAndSortStrings(imps)
 
 	return
 }
@@ -230,12 +231,6 @@ func parseTpl(buf *bytes.Buffer, name, tpl string, data interface{}) error {
 		return fmt.Errorf("template %s execute err %w", name, err)
 	}
 	return nil
-}
-
-func checkErr(err error) {
-	if err != nil {
-		panic(fmt.Sprintf("err: %+v", err))
-	}
 }
 
 // copy from github.com/jinzhu/gorm/model_struct.go:parseTagSetting
@@ -323,4 +318,22 @@ func parseFunc(fn string) []string {
 	sort.Strings(fns) // sorted by func name
 
 	return fns
+}
+
+func checkErr(err error) {
+	if err != nil {
+		panic(fmt.Sprintf("err: %+v", err))
+	}
+}
+
+func uniqueAndSortStrings(os []string) (ns []string) {
+	var exist = make(map[string]struct{})
+	for _, s := range os {
+		if _, ok := exist[s]; ok {
+			continue
+		}
+		ns = append(ns, s)
+	}
+	sort.Strings(ns)
+	return
 }
