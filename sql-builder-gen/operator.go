@@ -14,3 +14,7 @@ const (
 	LIKE    = "LIKE"
 	RLIKE   = "RLIKE"
 )
+
+const (
+	TIME = "TIME"
+)

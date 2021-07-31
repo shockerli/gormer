@@ -7,8 +7,9 @@ var tplPkg = `
 package {{.pkg}}
 
 import (
-	"github.com/jinzhu/gorm"
-{{range $v := .fields}}{{$v.Import}}{{end}}
+{{- range $v := .import}}
+	{{$v}}
+{{- end}}
 )
 `
 
@@ -129,6 +130,35 @@ func (i {{.Name}}) RLike(v ...{{.Type}}) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("{{.Column}} LIKE '?%'", v[0])
 	}
+}
+`,
+}
+
+var tplExtend = map[string]string{
+	TIME: `
+// Datetime return datetime
+func (i {{.Name}}) Datetime() string {
+	return time.Unix(i.{{.Field}}, 0).Format("2006-01-02 15:04:05")
+}
+
+// Date return date
+func (i {{.Name}}) Date() string {
+	return time.Unix(i.{{.Field}}, 0).Format("2006-01-02")
+}
+
+// DateInt return date with int
+func (i {{.Name}}) DateInt() string {
+	return time.Unix(i.{{.Field}}, 0).Format("20060102")
+}
+
+// Time return time.Time
+func (i {{.Name}}) Time() time.Time {
+	return time.Unix(i.{{.Field}}, 0)
+}
+
+// String return format datetime
+func (i {{.Name}}) String() string {
+	return i.Datetime()
 }
 `,
 }

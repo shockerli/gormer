@@ -24,9 +24,12 @@ type Field struct {
 	Column string   // database column name
 	Import string   // imported packages
 	Fns    []string // need generate functions
+	Extend []string // extend functions
 }
 
 const suffix = "_sql_builder_gen"
+
+const name = "sql-builder-gen"
 
 var file = os.Getenv("GOFILE")
 
@@ -45,23 +48,26 @@ func parse() []Field {
 	f, err := parser.ParseFile(fset, file, nil, parser.ParseComments)
 	checkErr(err)
 
+	// Imports
 	imps := parseImports(f.Imports)
 
 	var fields []Field
 	for _, decl := range f.Decls {
 		switch decl := decl.(type) {
 		case *ast.GenDecl:
-			var fns []string
+			var fns, ets []string
 			var gen = false
 			if decl.Doc == nil {
 				continue
 			}
 			for _, comment := range decl.Doc.List {
-				if strings.HasPrefix(comment.Text, "//go:sql-builder-gen") {
+				if strings.HasPrefix(comment.Text, "//go:"+name) {
 					gen = true
 
 					// func
-					fns = parseFunc(comment.Text)
+					fn, ext := parseParams(comment.Text)
+					fns = parseFunc(fn)
+					ets = parseFunc(ext)
 				}
 			}
 			if !gen {
@@ -72,7 +78,7 @@ func parse() []Field {
 				switch spec := spec.(type) {
 				case *ast.TypeSpec:
 					switch t := spec.Type.(type) {
-					case *ast.StructType:
+					case *ast.StructType: // only type struct
 						if len(t.Fields.List) != 1 {
 							continue
 						}
@@ -108,8 +114,9 @@ func parse() []Field {
 								field.Column = col
 							}
 
-							// func
+							// Func
 							field.Fns = fns
+							field.Extend = ets
 
 							fields = append(fields, field)
 						}
@@ -129,6 +136,8 @@ func genCode(fields []Field) ([]byte, error) {
 		buf = bytes.NewBufferString("")
 	)
 
+	imps, nfs := clearData(fields)
+
 	// pkg & import
 	t, err = template.New("").Parse(tplPkg)
 	if err != nil {
@@ -136,32 +145,91 @@ func genCode(fields []Field) ([]byte, error) {
 	}
 	err = t.Execute(buf, map[string]interface{}{
 		"pkg":    os.Getenv("GOPACKAGE"), // source package
-		"fields": fields,
+		"import": imps,
 	})
 
 	// func
-	for _, f := range fields {
+	for _, f := range nfs {
 		buf.WriteString(fmt.Sprintf(`// ****************** %s ****************** //
 `, f.Field))
 
+		// basic func
 		for _, fn := range f.Fns {
-			if _, ok := tplFunc[fn]; !ok {
-				continue
-			}
-
-			t, err = template.New("").Parse(tplFunc[fn])
+			err = parseTpl(buf, fn, tplFunc[fn], f)
 			if err != nil {
-				return nil, fmt.Errorf("template %s parse err %w", fn, err)
+				return nil, err
 			}
+		}
 
-			err = t.Execute(buf, f)
+		// extend func
+		for _, ext := range f.Extend {
+			err = parseTpl(buf, ext, tplExtend[ext], f)
 			if err != nil {
-				return nil, fmt.Errorf("template %s execute err %w", fn, err)
+				return nil, err
 			}
 		}
 	}
 
 	return format.Source(buf.Bytes())
+}
+
+func clearData(fs []Field) (imps []string, nfs []Field) {
+	imps = append(imps, `"github.com/jinzhu/gorm"`)
+
+	for _, f := range fs {
+		// new Field
+		var nf = Field{
+			Name:   f.Name,
+			Field:  f.Field,
+			Type:   f.Type,
+			Column: f.Column,
+			Import: f.Import,
+		}
+		// import
+		if f.Import != "" {
+			imps = append(imps, f.Import)
+		}
+
+		// basic func
+		for _, fn := range f.Fns {
+			if _, ok := tplFunc[fn]; !ok {
+				continue
+			}
+			nf.Fns = append(nf.Fns, fn)
+		}
+
+		// extend func
+		for _, ext := range f.Extend {
+			if _, ok := tplExtend[ext]; !ok {
+				continue
+			}
+
+			switch true {
+			case f.Type == "int64" && ext == TIME:
+				imps = append(imps, `"time"`) // need std time package
+			default:
+				continue
+			}
+			nf.Extend = append(nf.Extend, ext)
+		}
+
+		nfs = append(nfs, nf)
+	}
+
+	return
+}
+
+func parseTpl(buf *bytes.Buffer, name, tpl string, data interface{}) error {
+	t, err := template.New("").Parse(tpl)
+	if err != nil {
+		return fmt.Errorf("template %s parse err %w", name, err)
+	}
+
+	err = t.Execute(buf, data)
+	if err != nil {
+		return fmt.Errorf("template %s execute err %w", name, err)
+	}
+	return nil
 }
 
 func checkErr(err error) {
@@ -215,15 +283,18 @@ func parseImports(imps []*ast.ImportSpec) map[string]string {
 	return m
 }
 
-func parseFunc(comment string) []string {
-	var cli = flag.NewFlagSet("x", flag.ExitOnError)
-	var fn string
-	cli.StringVar(&fn, "f", "EQ", "")
+func parseParams(comment string) (fn, ext string) {
+	var cli = flag.NewFlagSet(name, flag.ExitOnError)
+	cli.StringVar(&fn, "f", "EQ", "-f=EQ,IN")
+	cli.StringVar(&ext, "t", "", "-t=TIME")
 	err := cli.Parse(strings.Split(comment, " ")[1:])
 	if err != nil {
-		checkErr(fmt.Errorf("params pasrse err %w", err))
+		checkErr(fmt.Errorf("params parse err %w", err))
 	}
+	return
+}
 
+func parseFunc(fn string) []string {
 	var fns []string
 	var exist = make(map[string]struct{})
 	for _, s := range strings.Split(fn, ",") {
