@@ -5,6 +5,7 @@ const (
 	EQ      = "EQ"
 	NEQ     = "NEQ"
 	IN      = "IN"
+	NOTIN   = "NOTIN"
 	GT      = "GT"
 	GTE     = "GTE"
 	LT      = "LT"

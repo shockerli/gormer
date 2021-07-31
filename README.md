@@ -90,7 +90,7 @@ type DispatchTypeX struct {
 
 - Generate code
 
-> execute command: `go generate app/field/fields.go`
+> execute command: `go generate ./...`
 >
 > generate codes to `app/field/fields_sql_builder_gen.go`:
 
