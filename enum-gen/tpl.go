@@ -17,16 +17,13 @@ var {{firstLower $type}}Map = map[{{$type}}]string{
 
 // Check whether the type is exist
 func (t {{$type}}) Check() bool {
-	_, ok := {{firstLower $type}}Map[t]
+	_, ok := {{$type}}Map()[t]
 	return ok
 }
 
 // Desc return the desc of type
 func (t {{$type}}) Desc() string {
-	if desc, ok := {{firstLower $type}}Map[t]; ok {
-		return desc
-	}
-	return ""
+	return {{$type}}Map()[t]
 }
 
 // {{$type}}Map return all of the types

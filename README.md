@@ -217,16 +217,13 @@ var payTypeMap = map[PayType]string{
 
 // Check whether the type is exist
 func (t PayType) Check() bool {
-    _, ok := payTypeMap[t]
+    _, ok := PayTypeMap()[t]
     return ok
 }
 
 // Desc return the desc of type
 func (t PayType) Desc() string {
-    if desc, ok := payTypeMap[t]; ok {
-        return desc
-    }
-    return ""
+    return PayTypeMap()[t]
 }
 
 // PayTypeMap return all of the types
