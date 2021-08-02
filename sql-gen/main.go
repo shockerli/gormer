@@ -27,9 +27,9 @@ type Field struct {
 	Extend []string // extend functions
 }
 
-const suffix = "_sql_builder_gen"
+const suffix = "_gen"
 
-const name = "sql-builder-gen"
+const name = "sql-gen"
 
 var file = os.Getenv("GOFILE")
 
