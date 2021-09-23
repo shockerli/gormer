@@ -16,49 +16,35 @@ type ChunkCallback func(loop int) error
 var ErrBreakChunk = errors.New("break the chunk while")
 
 // ChunkByIDMaxMin process data in chunks, scope by id
-func ChunkByIDMaxMin(size int64, db *gorm.DB, dest interface{}, callback ChunkCallback, l Logger) (err error) {
+func ChunkByIDMaxMin(size int64, db *gorm.DB, dest interface{}, callback ChunkCallback, l Logger, extra ...func(db *gorm.DB) *gorm.DB) (err error) {
 	if l == nil {
 		l = new(DefaultLogger)
 	}
 	startTime := time.Now().UnixNano()
 	tableName := TableName(db)
 
-	// query the maximum and minimum primary key id that satisfy the criteria
-	var stat = struct {
-		MaxID sql.NullInt64 `json:"max_id"`
-		MinID sql.NullInt64 `json:"min_id"`
-	}{}
-	err = db.NewScope(db.Value).DB().Table(tableName).
-		Select("MAX(id) AS max_id, MIN(id) AS min_id").
-		Take(&stat).Error
-
+	maxID, minID, err := MaxMinID(db.Scopes(extra...))
+	l.Info(fmt.Sprintf("query result: MinId(%d), MaxId(%d), ERR(%v)", minID, maxID, err))
 	if err != nil {
-		l.Error(fmt.Sprintf("query MinId and MaxId error: %v", err))
 		return
 	}
-	if !stat.MaxID.Valid || !stat.MinID.Valid {
-		l.Info("no matching data...MinId(null), MaxId(null)")
-		return nil
-	}
-
-	l.Info(fmt.Sprintf("query result: MinId(%d), MaxId(%d)", stat.MinID.Int64, stat.MaxID.Int64))
 
 	// store the max id of last loop
-	var lastMaxID = stat.MinID.Int64
+	var lastMaxID = minID
 	var loop = 0
 	var totalCount int64
 
 	for {
 		loop++
 
-		if lastMaxID > stat.MaxID.Int64 {
+		if lastMaxID > maxID {
 			break
 		}
 
 		// start at MinId, end at MaxId
 		lt := lastMaxID + size
-		if lt > stat.MaxID.Int64 {
-			lt = stat.MaxID.Int64 + 1
+		if lt > maxID {
+			lt = maxID + 1
 		}
 
 		// paging through id range coverage
@@ -100,4 +86,36 @@ func TableName(db *gorm.DB) string {
 		return ts
 	}
 	return db.NewScope(db.Value).TableName()
+}
+
+// MaxMinID fetch the max and min ID for scope, support GROUP BY
+func MaxMinID(db *gorm.DB) (max, min int64, err error) {
+	tableName := TableName(db)
+
+	// query the maximum and minimum primary key id that satisfy the criteria
+	type Row struct {
+		MaxID sql.NullInt64 `json:"max_id"`
+		MinID sql.NullInt64 `json:"min_id"`
+	}
+	var stats []Row
+	err = db.NewScope(db.Value).DB().Table(tableName). // new scope
+								Select("MAX(id) AS max_id, MIN(id) AS min_id").
+								Scan(&stats).Error // scan data to list, support GROUP BY
+
+	// no records
+	if err == nil && len(stats) == 0 {
+		err = gorm.ErrRecordNotFound
+	}
+
+	// compare to the max and min
+	for idx, v := range stats {
+		if idx == 0 || v.MaxID.Int64 > max {
+			max = v.MaxID.Int64
+		}
+		if idx == 0 || v.MinID.Int64 < min {
+			min = v.MinID.Int64
+		}
+	}
+
+	return
 }
