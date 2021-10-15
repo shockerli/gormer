@@ -26,6 +26,10 @@ func ChunkByIDMaxMin(size int64, db *gorm.DB, dest interface{}, callback ChunkCa
 	maxID, minID, err := MaxMinID(db.Scopes(extra...))
 	l.Info(fmt.Sprintf("query result: MinId(%d), MaxId(%d), ERR(%v)", minID, maxID, err))
 	if err != nil {
+		// ignore record not found
+		if gorm.IsRecordNotFoundError(err) {
+			err = nil
+		}
 		return
 	}
 
